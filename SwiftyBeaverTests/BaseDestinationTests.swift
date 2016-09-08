@@ -110,6 +110,45 @@ class BaseDestinationTests: XCTestCase {
         XCTAssertEqual(str, "DEBUG: Hello")
     }
 
+    func testFormattedMsg() {
+        let obj = BaseDestination()
+        var str = ""
+        var format = ""
+
+        // empty format
+        str = obj.formatMessage(format, level: .Verbose, msg: "Hello", thread: "main",
+            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50)
+        XCTAssertEqual(str, "")
+
+        // format without variables
+        format = "Hello"
+        str = obj.formatMessage(format, level: .Verbose, msg: "Hello", thread: "main",
+                                file: "/path/to/ViewController.swift", function: "testFunction()", line: 50)
+        XCTAssertEqual(str, "Hello")
+
+        // weird format
+        format = "$"
+        str = obj.formatMessage(format, level: .Verbose, msg: "Hello", thread: "main",
+                                file: "/path/to/ViewController.swift", function: "testFunction()", line: 50)
+        XCTAssertEqual(str, "")
+
+        // basic format
+        format = "|$T| $L: $M"
+        str = obj.formatMessage(format, level: .Verbose, msg: "Hello", thread: "main",
+            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50)
+        XCTAssertEqual(str, "|main| VERBOSE: Hello")
+
+        // format with date
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let dateStr = formatter.string(from: NSDate() as Date)
+
+        format = "[$Dyyyy-MM-dd HH:mm:ss$d] |$T| $N.$F:$l $L: $M"
+        str = obj.formatMessage(format, level: .Verbose, msg: "Hello", thread: "main",
+            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50)
+        XCTAssertEqual(str, "[\(dateStr)] |main| ViewController.testFunction():50 VERBOSE: Hello")
+    }
+
     func test_init_noMinLevelExplicitelySet_createsOneMatchingLevelFilter() {
         let destination = BaseDestination()
         XCTAssertEqual(destination.filters.count, 1)

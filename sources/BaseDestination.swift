@@ -246,6 +246,96 @@ open class BaseDestination: Hashable, Equatable {
         return str
     }
 
+    /// returns the log message based on the format pattern
+    func formatMessage(_ format: String, level: SwiftyBeaver.Level, msg: String, thread: String,
+                file: String, function: String, line: Int) -> String {
+
+        var text = ""
+        let phrases: [String] = format.components(separatedBy: "$")
+
+        for phrase in phrases {
+            if !phrase.isEmpty {
+                let firstChar = phrase[phrase.startIndex]
+                let rangeAfterFirstChar = phrase.index(phrase.startIndex, offsetBy: 1)..<phrase.endIndex
+                let remainingPhrase = phrase[rangeAfterFirstChar]
+
+                switch firstChar {
+                case "L":
+                    text += levelWord(level) + remainingPhrase
+                case "M":
+                    text += msg + remainingPhrase
+                case "T":
+                    text += thread + remainingPhrase
+                case "N":
+                    // name of file without suffix
+                    text += fileNameWithoutSuffix(file) + remainingPhrase
+                case "n":
+                    // name of file with suffix
+                    text += fileNameOfFile(file) + remainingPhrase
+                case "F":
+                    text += function + remainingPhrase
+                case "l":
+                    text += String(line) + remainingPhrase
+                case "D":
+                    // start of datetime format
+                    text += formattedDate(remainingPhrase)
+                case "d":
+                    text += remainingPhrase
+                default:
+                    text += phrase
+                }
+            }
+        }
+        return text
+    }
+
+    /// returns the string of a level
+    func levelWord(_ level: SwiftyBeaver.Level) -> String {
+
+        var str = ""
+
+        switch level {
+        case SwiftyBeaver.Level.Debug:
+            str = levelString.Debug
+
+        case SwiftyBeaver.Level.Info:
+            str = levelString.Info
+
+        case SwiftyBeaver.Level.Warning:
+            str = levelString.Warning
+
+        case SwiftyBeaver.Level.Error:
+            str = levelString.Error
+
+        default:
+            // Verbose is default
+            str = levelString.Verbose
+        }
+        return str
+    }
+
+    /// returns the filename of a path
+    func fileNameOfFile(_ file: String) -> String {
+        let fileParts = file.components(separatedBy: "/")
+        if let lastPart = fileParts.last {
+            return lastPart
+        }
+        return ""
+    }
+
+    /// returns the filename without suffix of a path
+    func fileNameWithoutSuffix(_ file: String) -> String {
+        let fileName = fileNameOfFile(file)
+
+        if !fileName.isEmpty {
+            let fileNameParts = fileName.components(separatedBy: ".")
+            if let firstPart = fileNameParts.first {
+                return firstPart
+            }
+        }
+        return ""
+    }
+
     /// Answer whether the destination has any message filters
     /// returns boolean and is used to decide whether to resolve the message before invoking shouldLevelBeLogged
     func hasMessageFilters() -> Bool {
