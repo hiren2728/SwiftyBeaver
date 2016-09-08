@@ -84,17 +84,17 @@ class BaseDestinationTests: XCTestCase {
 
         // logging to main thread does not output thread name
         str = obj.formattedMessage(dateStr, levelString: "DEBUG", msg: "Hello", thread: "main",
-            path: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: false)
+            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: false)
         XCTAssertNotNil(str.range(of: "[\(dateStr)] DEBUG: Hello"))
         XCTAssertNil(str.range(of: "main"))
         XCTAssertNil(str.range(of: "|"))
 
         str = obj.formattedMessage(dateStr, levelString: "DEBUG", msg: "Hello", thread: "myThread",
-            path: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: true)
+            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: true)
         XCTAssertNotNil(str.range(of: "[\(dateStr)] |myThread| ViewController.testFunction():50 DEBUG: Hello"))
 
         str = obj.formattedMessage(dateStr, levelString: "DEBUG", msg: "Hello", thread: "",
-            path: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: true)
+            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: true)
         XCTAssertNotNil(str.range(of: "[\(dateStr)] ViewController.testFunction():50 DEBUG: Hello"))
         XCTAssertNil(str.range(of: "|"))
     }
@@ -106,7 +106,7 @@ class BaseDestinationTests: XCTestCase {
         XCTAssertEqual(dateStr, "")
 
         str = obj.formattedMessage(dateStr, levelString: "DEBUG", msg: "Hello", thread: "main",
-            path: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: false)
+            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: false)
         XCTAssertEqual(str, "DEBUG: Hello")
     }
 
@@ -124,13 +124,13 @@ class BaseDestinationTests: XCTestCase {
     func test_init_newMinLevelExplicitelySetAndPasses_True() {
         let destination = BaseDestination()
         destination.minLevel = SwiftyBeaver.Level.Info
-        XCTAssertTrue(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Info, path: "", function: ""))
+        XCTAssertTrue(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Info, file: "", function: ""))
     }
 
     func test_init_newMinLevelExplicitelySetAndDoesNotPass_False() {
         let destination = BaseDestination()
         destination.minLevel = SwiftyBeaver.Level.Info
-        XCTAssertFalse(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Verbose, path: "", function: ""))
+        XCTAssertFalse(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Verbose, file: "", function: ""))
     }
 
     func test_shouldLevelBeLogged_hasLevelFilterAndOneEqualsPathFilterAndPasses_True() {
@@ -139,7 +139,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Path.equals(strings: "/world/beaver.swift",
                                                           caseSensitive: true, required: true))
         XCTAssertTrue(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                      path: "/world/beaver.swift", function: "initialize"))
+                                                      file: "/world/beaver.swift", function: "initialize"))
     }
 
     func test_shouldLevelBeLogged_hasLevelFilterAndOneEqualsPathFilterAndDoesNotPass_False() {
@@ -148,7 +148,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Path.equals(strings: "/world/beaver.swift",
                                                           caseSensitive: true, required: true))
         XCTAssertFalse(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                       path: "/hello/foo.swift", function: "initialize"))
+                                                       file: "/hello/foo.swift", function: "initialize"))
     }
 
     func test_shouldLevelBeLogged_hasLevelFilterAndTwoRequiredPathFiltersAndPasses_True() {
@@ -159,7 +159,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Path.endsWith(suffixes: "beaver.swift",
                                                             caseSensitive: true, required: true))
         XCTAssertTrue(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                      path: "/world/beaver.swift", function: "initialize"))
+                                                      file: "/world/beaver.swift", function: "initialize"))
     }
 
     func test_shouldLevelBeLogged_hasLevelFilterAndTwoRequiredPathFiltersAndDoesNotPass_False() {
@@ -168,7 +168,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Path.startsWith(prefixes: "/world", caseSensitive: true, required: true))
         destination.addFilter(filter: Filters.Path.endsWith(suffixes: "foo.swift", caseSensitive: true, required: true))
         XCTAssertFalse(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                       path: "/hello/foo.swift", function: "initialize"))
+                                                       file: "/hello/foo.swift", function: "initialize"))
     }
 
     func test_shouldLevelBeLogged_hasLevelFilterARequiredPathFilterAndTwoRequiredMessageFiltersAndPasses_True() {
@@ -178,7 +178,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Message.startsWith(prefixes: "SQL:", caseSensitive: true, required: true))
         destination.addFilter(filter: Filters.Message.contains(strings: "insert", caseSensitive: false, required: true))
         XCTAssertTrue(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                      path: "/world/beaver.swift", function: "executeSQLStatement",
+                                                      file: "/world/beaver.swift", function: "executeSQLStatement",
                                                       message: "SQL: INSERT INTO table (c1, c2) VALUES (1, 2)"))
     }
 
@@ -189,7 +189,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Message.startsWith(prefixes: "SQL:", caseSensitive: true, required: true))
         destination.addFilter(filter: Filters.Message.contains(strings: "insert", caseSensitive: false, required: true))
         XCTAssertFalse(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                       path: "/world/beaver.swift", function: "executeSQLStatement",
+                                                       file: "/world/beaver.swift", function: "executeSQLStatement",
                                                        message: "SQL: DELETE FROM table WHERE c1 = 1"))
     }
 
@@ -203,7 +203,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Message.startsWith(prefixes: "SQL:", caseSensitive: true, required: true))
         destination.addFilter(filter: Filters.Message.contains(strings: "insert", "update", "delete", required: true))
         XCTAssertTrue(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                      path: "/world/beaver.swift", function: "executeSQLStatement",
+                                                      file: "/world/beaver.swift", function: "executeSQLStatement",
                                                       message: "SQL: INSERT INTO table (c1, c2) VALUES (1, 2)"))
     }
 
@@ -217,7 +217,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Message.startsWith(prefixes: "SQL:", caseSensitive: true, required: true))
         destination.addFilter(filter: Filters.Message.contains(strings: "insert", "update", "delete", required: true))
         XCTAssertFalse(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                       path: "/world/beaver.swift", function: "executeSQLStatement",
+                                                       file: "/world/beaver.swift", function: "executeSQLStatement",
                                                        message: "SQL: CREATE TABLE sample (c1 INTEGER, c2 VARCHAR)"))
     }
 
@@ -233,7 +233,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Message.contains(strings: "update"))
         destination.addFilter(filter: Filters.Message.contains(strings: "delete"))
         XCTAssertTrue(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                      path: "/world/beaver.swift", function: "executeSQLStatement",
+                                                      file: "/world/beaver.swift", function: "executeSQLStatement",
                                                       message: "SQL: INSERT INTO table (c1, c2) VALUES (1, 2)"))
     }
 
@@ -249,7 +249,7 @@ class BaseDestinationTests: XCTestCase {
         destination.addFilter(filter: Filters.Message.contains(strings: "update"))
         destination.addFilter(filter: Filters.Message.contains(strings: "delete"))
         XCTAssertFalse(destination.shouldLevelBeLogged(level: SwiftyBeaver.Level.Warning,
-                                                       path: "/world/beaver.swift", function: "executeSQLStatement",
+                                                       file: "/world/beaver.swift", function: "executeSQLStatement",
                                                        message: "SQL: INSERT INTO table (c1, c2) VALUES (1, 2)"))
     }
 

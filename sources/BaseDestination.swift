@@ -135,14 +135,14 @@ open class BaseDestination: Hashable, Equatable {
     /// returns the formatted log message for processing by inheriting method
     /// and for unit tests (nil if error)
     open func send(_ level: SwiftyBeaver.Level, msg: String, thread: String,
-        path: String, function: String, line: Int) -> String? {
+        file: String, function: String, line: Int) -> String? {
         var dateStr = ""
         var str = ""
         let levelStr = formattedLevel(level)
         let formattedMsg = coloredMessage(msg, forLevel: level)
 
         dateStr = formattedDate(dateFormat)
-        str = formattedMessage(dateStr, levelString: levelStr, msg: formattedMsg, thread: thread, path: path,
+        str = formattedMessage(dateStr, levelString: levelStr, msg: formattedMsg, thread: thread, file: file,
             function: function, line: line, detailOutput: detailOutput)
         return str
     }
@@ -222,7 +222,7 @@ open class BaseDestination: Hashable, Equatable {
 
     /// returns the formatted log message
     func formattedMessage(_ dateString: String, levelString: String, msg: String,
-        thread: String, path: String, function: String, line: Int, detailOutput: Bool) -> String {
+        thread: String, file: String, function: String, line: Int, detailOutput: Bool) -> String {
         var str = ""
         if dateString != "" {
              str += "[\(dateString)] "
@@ -234,10 +234,10 @@ open class BaseDestination: Hashable, Equatable {
 
             // just use the file name of the path and remove suffix
             //let file = path.components(separatedBy: "/").last!.components(".").first!
-            let pathComponents = path.components(separatedBy: "/")
+            let pathComponents = file.components(separatedBy: "/")
             if let lastComponent = pathComponents.last {
-                if let file = lastComponent.components(separatedBy: ".").first {
-                    str += "\(file).\(function):\(String(line)) \(levelString): \(msg)"
+                if let fileName = lastComponent.components(separatedBy: ".").first {
+                    str += "\(fileName).\(function):\(String(line)) \(levelString): \(msg)"
                 }
             }
         } else {
@@ -255,9 +255,9 @@ open class BaseDestination: Hashable, Equatable {
 
     /// checks if level is at least minLevel or if a minLevel filter for that path does exist
     /// returns boolean and can be used to decide if a message should be logged or not
-    func shouldLevelBeLogged(level: SwiftyBeaver.Level, path: String, function: String, message: String? = nil) -> Bool {
-        return passesAllRequiredFilters(level: level, path: path, function: function, message: message) &&
-            passesAtLeastOneNonRequiredFilter(level: level, path: path, function: function, message: message)
+    func shouldLevelBeLogged(level: SwiftyBeaver.Level, file: String, function: String, message: String? = nil) -> Bool {
+        return passesAllRequiredFilters(level: level, file: file, function: function, message: message) &&
+            passesAtLeastOneNonRequiredFilter(level: level, file: file, function: function, message: message)
     }
 
     func getFiltersTargeting(target: Filter.TargetType, fromFilters: [FilterType]) -> [FilterType] {
@@ -267,25 +267,25 @@ open class BaseDestination: Hashable, Equatable {
         }
     }
 
-    func passesAllRequiredFilters(level: SwiftyBeaver.Level, path: String, function: String, message: String?) -> Bool {
+    func passesAllRequiredFilters(level: SwiftyBeaver.Level, file: String, function: String, message: String?) -> Bool {
         let requiredFilters = self.filters.filter {
             filter in
             return filter.isRequired()
         }
 
-        return applyFilters(targetFilters: requiredFilters, level: level, path: path,
+        return applyFilters(targetFilters: requiredFilters, level: level, file: file,
                             function: function, message: message) == requiredFilters.count
     }
 
     func passesAtLeastOneNonRequiredFilter(level: SwiftyBeaver.Level,
-                                           path: String, function: String, message: String?) -> Bool {
+                                           file: String, function: String, message: String?) -> Bool {
         let nonRequiredFilters = self.filters.filter {
             filter in
             return !filter.isRequired()
         }
 
         return nonRequiredFilters.isEmpty ||
-            applyFilters(targetFilters: nonRequiredFilters, level: level, path: path,
+            applyFilters(targetFilters: nonRequiredFilters, level: level, file: file,
                          function: function, message: message) > 0
     }
 
@@ -299,7 +299,7 @@ open class BaseDestination: Hashable, Equatable {
     }
 
     func applyFilters(targetFilters: [FilterType], level: SwiftyBeaver.Level,
-                      path: String, function: String, message: String?) -> Int {
+                      file: String, function: String, message: String?) -> Int {
         return targetFilters.filter {
             filter in
 
@@ -310,7 +310,7 @@ open class BaseDestination: Hashable, Equatable {
                 passes = filter.apply(value: level.rawValue)
 
             case .Path(_):
-                passes = filter.apply(value: path)
+                passes = filter.apply(value: file)
 
             case .Function(_):
                 passes = filter.apply(value: function)

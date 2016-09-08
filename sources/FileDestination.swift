@@ -63,8 +63,8 @@ public class FileDestination: BaseDestination {
 
     // append to file. uses full base class functionality
     override public func send(_ level: SwiftyBeaver.Level, msg: String, thread: String,
-        path: String, function: String, line: Int) -> String? {
-        let formattedString = super.send(level, msg: msg, thread: thread, path: path, function: function, line: line)
+        file: String, function: String, line: Int) -> String? {
+        let formattedString = super.send(level, msg: msg, thread: thread, file: file, function: function, line: line)
 
         if let str = formattedString {
             let _ = saveToFile(str: str)

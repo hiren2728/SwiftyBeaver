@@ -65,10 +65,10 @@ class SBPlatformDestinationTests: XCTestCase {
         //let platform = SBPlatformDestination()
         let msg = "test message\nNewlineäößø"
         let thread = ""
-        let path = "/file/path.swift"
+        let file = "/file/path.swift"
         let function = "TestFunction()"
         let line = 123
-        let str = platform.send(.Verbose, msg: msg, thread: thread, path: path, function: function, line: line)
+        let str = platform.send(.Verbose, msg: msg, thread: thread, file: file, function: function, line: line)
         XCTAssertNotNil(str)
         if let str = str {
             XCTAssertEqual(str.characters.first, "{")

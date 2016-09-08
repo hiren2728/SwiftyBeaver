@@ -84,44 +84,44 @@ public class SwiftyBeaver {
 
     /// log something generally unimportant (lowest priority)
     public class func verbose(_ message: @autoclosure () -> Any, _
-        path: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .Verbose, message: message, path: path, function: function, line: line)
+        file: String = #file, _ function: String = #function, line: Int = #line) {
+        custom(level: .Verbose, message: message, file: file, function: function, line: line)
     }
 
     /// log something which help during debugging (low priority)
     public class func debug(_ message: @autoclosure () -> Any, _
-        path: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .Debug, message: message, path: path, function: function, line: line)
+        file: String = #file, _ function: String = #function, line: Int = #line) {
+        custom(level: .Debug, message: message, file: file, function: function, line: line)
     }
 
     /// log something which you are really interested but which is not an issue or error (normal priority)
     public class func info(_ message: @autoclosure () -> Any, _
-        path: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .Info, message: message, path: path, function: function, line: line)
+        file: String = #file, _ function: String = #function, line: Int = #line) {
+        custom(level: .Info, message: message, file: file, function: function, line: line)
     }
 
     /// log something which may cause big trouble soon (high priority)
     public class func warning(_ message: @autoclosure () -> Any, _
-        path: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .Warning, message: message, path: path, function: function, line: line)
+        file: String = #file, _ function: String = #function, line: Int = #line) {
+        custom(level: .Warning, message: message, file: file, function: function, line: line)
     }
 
     /// log something which will keep you awake at night (highest priority)
     public class func error(_ message: @autoclosure () -> Any, _
-        path: String = #file, _ function: String = #function, line: Int = #line) {
-        custom(level: .Error, message: message, path: path, function: function, line: line)
+        file: String = #file, _ function: String = #function, line: Int = #line) {
+        custom(level: .Error, message: message, file: file, function: function, line: line)
     }
 
     /// custom logging to manually adjust values, should just be used by other frameworks
     public class func custom(level: SwiftyBeaver.Level, message: @autoclosure () -> Any,
-        path: String = #file, function: String = #function, line: Int = #line) {
+        file: String = #file, function: String = #function, line: Int = #line) {
         dispatch_send(level: level, message: message, thread: threadName(),
-                      path: path, function: function, line: line)
+                      file: file, function: function, line: line)
     }
 
     /// internal helper which dispatches send to dedicated queue if minLevel is ok
     class func dispatch_send(level: SwiftyBeaver.Level, message: @autoclosure () -> Any,
-        thread: String, path: String, function: String, line: Int) {
+        thread: String, file: String, function: String, line: Int) {
         var resolvedMessage: String?
         for dest in destinations {
 
@@ -130,18 +130,18 @@ public class SwiftyBeaver {
             }
 
             resolvedMessage = resolvedMessage == nil && dest.hasMessageFilters() ? "\(message())" : nil
-            if dest.shouldLevelBeLogged(level: level, path: path, function: function, message: resolvedMessage) {
+            if dest.shouldLevelBeLogged(level: level, file: file, function: function, message: resolvedMessage) {
                 // try to convert msg object to String and put it on queue
                 let msgStr = resolvedMessage == nil ? "\(message())" : resolvedMessage!
                 let f = stripParams(function: function)
 
                 if dest.asynchronously {
                     queue.async() {
-                        let _ = dest.send(level, msg: msgStr, thread: thread, path: path, function: f, line: line)
+                        let _ = dest.send(level, msg: msgStr, thread: thread, file: file, function: f, line: line)
                     }
                 } else {
                     queue.sync() {
-                        let _ = dest.send(level, msg: msgStr, thread: thread, path: path, function: f, line: line)
+                        let _ = dest.send(level, msg: msgStr, thread: thread, file: file, function: f, line: line)
                     }
                 }
             }

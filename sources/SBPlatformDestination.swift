@@ -144,7 +144,7 @@ public class SBPlatformDestination: BaseDestination {
 
     // append to file, each line is a JSON dict
     override public func send(_ level: SwiftyBeaver.Level, msg: String, thread: String,
-        path: String, function: String, line: Int) -> String? {
+        file: String, function: String, line: Int) -> String? {
 
         var jsonString: String?
 
@@ -153,7 +153,7 @@ public class SBPlatformDestination: BaseDestination {
             "level": level.rawValue,
             "message": msg,
             "thread": thread,
-            "fileName": path.components(separatedBy: "/").last!,
+            "fileName": file.components(separatedBy: "/").last!,
             "function": function,
             "line":line]
 
