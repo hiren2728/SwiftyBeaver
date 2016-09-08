@@ -51,7 +51,7 @@ Conveniently access your logs during development & release with our [free Mac Ap
 <br/>
 
 
-## Installation
+## Installation of Swift3 branch
 
 #### via Carthage
 
