@@ -82,7 +82,7 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 To use [CocoaPods](https://cocoapods.org) just add this to your Podfile:
 
 ``` 
-pod 'SwiftyBeaver'
+pod 'SwiftyBeaver', branch:'swift3'
 ```
 
 #### via Swift Package Manager
