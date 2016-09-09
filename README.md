@@ -165,7 +165,7 @@ log.error(["name": "Mr Beaver", "address": "7 Beaver Lodge"])
 
 **Advanced Topics:**
 
-- [Custom Format](http://docs.swiftybeaver.com//article/20-custom-format)
+- [Custom Format](http://docs.swiftybeaver.com/article/20-custom-format)
 
 **Stay Informed:**
 
