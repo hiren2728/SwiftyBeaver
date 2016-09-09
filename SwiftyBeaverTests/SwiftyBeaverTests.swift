@@ -92,8 +92,7 @@ class SwiftyBeaverTests: XCTestCase {
         let console2 = ConsoleDestination()
         XCTAssertTrue(log.addDestination(console2))
         XCTAssertEqual(log.countDestinations(), 2)
-        console2.detailOutput = false
-        console2.dateFormat = "HH:mm:ss.SSS"
+        console2.format = "$L: $M"
         console2.minLevel = SwiftyBeaver.Level.Debug
         log.verbose("a verbose hello from hopefully just 1 console!")
         log.debug("a debug hello from 2 different consoles!")
@@ -110,8 +109,7 @@ class SwiftyBeaverTests: XCTestCase {
         // log to another file
         let file2 = FileDestination()
         file2.logFileURL = URL(string: "file:///tmp/testSwiftyBeaver2.log")!
-        file2.detailOutput = false
-        file2.dateFormat = "HH:mm:ss.SSS"
+        console2.format = "$L: $M"
         file2.minLevel = SwiftyBeaver.Level.Debug
         XCTAssertTrue(log.addDestination(file2))
         XCTAssertEqual(log.countDestinations(), 4)
@@ -121,8 +119,7 @@ class SwiftyBeaverTests: XCTestCase {
 
         // log to default file location
         let file3 = FileDestination()
-        file3.detailOutput = false
-        file3.dateFormat = "HH:mm:ss.SSS"
+        console2.format = "$L: $M"
         XCTAssertTrue(log.addDestination(file3))
         XCTAssertEqual(log.countDestinations(), 5)
         log.info("Logging to default log file \(file3.logFileURL)")
@@ -139,12 +136,8 @@ class SwiftyBeaverTests: XCTestCase {
         // add file
         let file = FileDestination()
         file.logFileURL = URL(string: "file:///tmp/testSwiftyBeaver.log")!
-        file.detailOutput = false
-        file.dateFormat = "HH:mm:ss.SSS"
+        file.format = "$L: $M"
         XCTAssertTrue(log.addDestination(file))
-
-        XCTAssertFalse(console.colored)
-        XCTAssertTrue(file.colored)
 
         log.verbose("not so important")
         log.debug("something to debug")
@@ -162,8 +155,6 @@ class SwiftyBeaverTests: XCTestCase {
         let console = ConsoleDestination()
         XCTAssertTrue(log.addDestination(console))
 
-        XCTAssertFalse(console.colored)
-
         // change default color
         console.levelColor.Verbose = "fg255,0,255;"
         console.levelColor.Debug = "fg255,100,0;"
@@ -178,41 +169,12 @@ class SwiftyBeaverTests: XCTestCase {
         log.error("ouch, an error did occur!, level in purple")
     }
 
-    func testColoredMessage() {
-        let log = SwiftyBeaver.self
-
-        // add console
-        let console = ConsoleDestination()
-        XCTAssertTrue(log.addDestination(console))
-
-        // add file
-        let file = FileDestination()
-        file.logFileURL = URL(string: "file:///tmp/testSwiftyBeaver.log")!
-        file.detailOutput = false
-        file.dateFormat = "HH:mm:ss.SSS"
-        XCTAssertTrue(log.addDestination(file))
-
-        console.coloredLines = true
-        XCTAssertFalse(console.colored)
-        XCTAssertTrue(console.coloredLines)
-        file.coloredLines = true
-        XCTAssertTrue(file.colored)
-        XCTAssertTrue(file.coloredLines)
-
-        log.verbose("not so important")
-        log.debug("something to debug")
-        log.info("a nice information")
-        log.warning("oh no, that won’t be good")
-        log.error("ouch, an error did occur!")
-    }
-
     func testDifferentMessageTypes() {
         let log = SwiftyBeaver.self
 
         // add console
         let console = ConsoleDestination()
-        console.detailOutput = false
-        console.dateFormat = "HH:mm:ss.SSS"
+        console.format = "$L: $M"
         console.levelString.Info = "interesting number"
         XCTAssertTrue(log.addDestination(console))
 
@@ -230,7 +192,6 @@ class SwiftyBeaverTests: XCTestCase {
         let log = SwiftyBeaver.self
         // add console
         let console = ConsoleDestination()
-        console.dateFormat = "HH:mm:ss.SSS"
         XCTAssertTrue(log.addDestination(console))
         // should not create a compile error relating autoclosure
         log.info(instanceVar)
@@ -242,7 +203,6 @@ class SwiftyBeaverTests: XCTestCase {
 
         // add console
         let console = ConsoleDestination()
-        console.dateFormat = "HH:mm:ss.SSS"
         // set info level on default
         console.minLevel = .Info
 
