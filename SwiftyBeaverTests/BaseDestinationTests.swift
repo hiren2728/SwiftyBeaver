@@ -25,92 +25,12 @@ class BaseDestinationTests: XCTestCase {
         XCTAssertNotNil(obj.queue)
     }
 
-    func testFormattedDate() {
-        // empty format
-        var str = BaseDestination().formattedDate("")
-        XCTAssertEqual(str, "")
-        // no time format
-        str = BaseDestination().formattedDate("--")
-        XCTAssertGreaterThanOrEqual(str, "--")
-        // HH:mm:ss
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        let dateStr = formatter.string(from: NSDate() as Date)
-        str = BaseDestination().formattedDate(formatter.dateFormat)
-        XCTAssertEqual(str, dateStr)
-    }
 
-    func testFormattedLevel() {
-        let obj = BaseDestination()
-        var str = ""
+    ////////////////////////////////
+    // MARK: Format
+    ////////////////////////////////
 
-        str = obj.formattedLevel(SwiftyBeaver.Level.Verbose)
-        XCTAssertNotNil(str, "VERBOSE")
-        str = obj.formattedLevel(SwiftyBeaver.Level.Debug)
-        XCTAssertNotNil(str, "DEBUG")
-        str = obj.formattedLevel(SwiftyBeaver.Level.Info)
-        XCTAssertNotNil(str, "INFO")
-        str = obj.formattedLevel(SwiftyBeaver.Level.Warning)
-        XCTAssertNotNil(str, "WARNING")
-        str = obj.formattedLevel(SwiftyBeaver.Level.Error)
-        XCTAssertNotNil(str, "ERROR")
-
-        // custom level strings
-        obj.levelString.Verbose = "Who cares"
-        obj.levelString.Debug = "Look"
-        obj.levelString.Info = "Interesting"
-        obj.levelString.Warning = "Oh oh"
-        obj.levelString.Error = "OMG!!!"
-
-        str = obj.formattedLevel(SwiftyBeaver.Level.Verbose)
-        XCTAssertNotNil(str, "Who cares")
-        str = obj.formattedLevel(SwiftyBeaver.Level.Debug)
-        XCTAssertNotNil(str, "Look")
-        str = obj.formattedLevel(SwiftyBeaver.Level.Info)
-        XCTAssertNotNil(str, "Interesting")
-        str = obj.formattedLevel(SwiftyBeaver.Level.Warning)
-        XCTAssertNotNil(str, "Oh oh")
-        str = obj.formattedLevel(SwiftyBeaver.Level.Error)
-        XCTAssertNotNil(str, "OMG!!!")
-    }
-
-    func testFormattedMessage() {
-        let obj = BaseDestination()
-        var str = ""
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-
-        let dateStr = formatter.string(from: NSDate() as Date)
-
-        // logging to main thread does not output thread name
-        str = obj.formattedMessage(dateStr, levelString: "DEBUG", msg: "Hello", thread: "main",
-            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: false)
-        XCTAssertNotNil(str.range(of: "[\(dateStr)] DEBUG: Hello"))
-        XCTAssertNil(str.range(of: "main"))
-        XCTAssertNil(str.range(of: "|"))
-
-        str = obj.formattedMessage(dateStr, levelString: "DEBUG", msg: "Hello", thread: "myThread",
-            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: true)
-        XCTAssertNotNil(str.range(of: "[\(dateStr)] |myThread| ViewController.testFunction():50 DEBUG: Hello"))
-
-        str = obj.formattedMessage(dateStr, levelString: "DEBUG", msg: "Hello", thread: "",
-            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: true)
-        XCTAssertNotNil(str.range(of: "[\(dateStr)] ViewController.testFunction():50 DEBUG: Hello"))
-        XCTAssertNil(str.range(of: "|"))
-    }
-
-    func testFormattedMessageEmptyDate() {
-        let obj = BaseDestination()
-        var str = ""
-        let dateStr = obj.formattedDate("")
-        XCTAssertEqual(dateStr, "")
-
-        str = obj.formattedMessage(dateStr, levelString: "DEBUG", msg: "Hello", thread: "main",
-            file: "/path/to/ViewController.swift", function: "testFunction()", line: 50, detailOutput: false)
-        XCTAssertEqual(str, "DEBUG: Hello")
-    }
-
-    func testFormattedMsg() {
+    func testFormatMessage() {
         let obj = BaseDestination()
         var str = ""
         var format = ""
@@ -138,16 +58,138 @@ class BaseDestinationTests: XCTestCase {
             file: "/path/to/ViewController.swift", function: "testFunction()", line: 50)
         XCTAssertEqual(str, "|main| VERBOSE: Hello")
 
-        // format with date
+        // format with date and color
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let dateStr = formatter.string(from: NSDate() as Date)
 
-        format = "[$Dyyyy-MM-dd HH:mm:ss$d] |$T| $N.$F:$l $L: $M"
+        obj.levelColor.Verbose = "?"
+        obj.escape = ">"
+        obj.reset = "<"
+
+        format = "[$Dyyyy-MM-dd HH:mm:ss$d] |$T| $N.$F:$l $C$L$c: $M"
         str = obj.formatMessage(format, level: .Verbose, msg: "Hello", thread: "main",
             file: "/path/to/ViewController.swift", function: "testFunction()", line: 50)
-        XCTAssertEqual(str, "[\(dateStr)] |main| ViewController.testFunction():50 VERBOSE: Hello")
+        XCTAssertEqual(str, "[\(dateStr)] |main| ViewController.testFunction():50 >?VERBOSE<: Hello")
     }
+
+    func testLevelWord() {
+        let obj = BaseDestination()
+        var str = ""
+
+        str = obj.levelWord(SwiftyBeaver.Level.Verbose)
+        XCTAssertNotNil(str, "VERBOSE")
+        str = obj.levelWord(SwiftyBeaver.Level.Debug)
+        XCTAssertNotNil(str, "DEBUG")
+        str = obj.levelWord(SwiftyBeaver.Level.Info)
+        XCTAssertNotNil(str, "INFO")
+        str = obj.levelWord(SwiftyBeaver.Level.Warning)
+        XCTAssertNotNil(str, "WARNING")
+        str = obj.levelWord(SwiftyBeaver.Level.Error)
+        XCTAssertNotNil(str, "ERROR")
+
+        // custom level strings
+        obj.levelString.Verbose = "Who cares"
+        obj.levelString.Debug = "Look"
+        obj.levelString.Info = "Interesting"
+        obj.levelString.Warning = "Oh oh"
+        obj.levelString.Error = "OMG!!!"
+
+        str = obj.levelWord(SwiftyBeaver.Level.Verbose)
+        XCTAssertNotNil(str, "Who cares")
+        str = obj.levelWord(SwiftyBeaver.Level.Debug)
+        XCTAssertNotNil(str, "Look")
+        str = obj.levelWord(SwiftyBeaver.Level.Info)
+        XCTAssertNotNil(str, "Interesting")
+        str = obj.levelWord(SwiftyBeaver.Level.Warning)
+        XCTAssertNotNil(str, "Oh oh")
+        str = obj.levelWord(SwiftyBeaver.Level.Error)
+        XCTAssertNotNil(str, "OMG!!!")
+    }
+
+    func testColorForLevel() {
+        let obj = BaseDestination()
+        var str = ""
+
+        // empty on default
+        str = obj.colorForLevel(SwiftyBeaver.Level.Verbose)
+        XCTAssertNotNil(str, "")
+        str = obj.colorForLevel(SwiftyBeaver.Level.Debug)
+        XCTAssertNotNil(str, "")
+        str = obj.colorForLevel(SwiftyBeaver.Level.Info)
+        XCTAssertNotNil(str, "")
+        str = obj.colorForLevel(SwiftyBeaver.Level.Warning)
+        XCTAssertNotNil(str, "")
+        str = obj.colorForLevel(SwiftyBeaver.Level.Error)
+        XCTAssertNotNil(str, "")
+
+        // custom level color strings
+        obj.levelString.Verbose = "silver"
+        obj.levelString.Debug = "green"
+        obj.levelString.Info = "blue"
+        obj.levelString.Warning = "yellow"
+        obj.levelString.Error = "red"
+
+        str = obj.colorForLevel(SwiftyBeaver.Level.Verbose)
+        XCTAssertNotNil(str, "silver")
+        str = obj.colorForLevel(SwiftyBeaver.Level.Debug)
+        XCTAssertNotNil(str, "green")
+        str = obj.colorForLevel(SwiftyBeaver.Level.Info)
+        XCTAssertNotNil(str, "blue")
+        str = obj.colorForLevel(SwiftyBeaver.Level.Warning)
+        XCTAssertNotNil(str, "yellow")
+        str = obj.colorForLevel(SwiftyBeaver.Level.Error)
+        XCTAssertNotNil(str, "red")
+    }
+
+    func testFileNameOfFile() {
+        let obj = BaseDestination()
+        var str = ""
+
+        str = obj.fileNameOfFile("")
+        XCTAssertEqual(str, "")
+        str = obj.fileNameOfFile("foo.bar")
+        XCTAssertEqual(str, "foo.bar")
+        str = obj.fileNameOfFile("path/to/ViewController.swift")
+        XCTAssertEqual(str, "ViewController.swift")
+    }
+
+    func testFileNameOfFileWithoutSuffix() {
+        let obj = BaseDestination()
+        var str = ""
+
+        str = obj.fileNameWithoutSuffix("")
+        XCTAssertEqual(str, "")
+        str = obj.fileNameWithoutSuffix("/")
+        XCTAssertEqual(str, "")
+        str = obj.fileNameWithoutSuffix("foo")
+        XCTAssertEqual(str, "foo")
+        str = obj.fileNameWithoutSuffix("foo.bar")
+        XCTAssertEqual(str, "foo")
+        str = obj.fileNameWithoutSuffix("path/to/ViewController.swift")
+        XCTAssertEqual(str, "ViewController")
+    }
+
+    func testFormatDate() {
+        // empty format
+        var str = BaseDestination().formatDate("")
+        XCTAssertEqual(str, "")
+        // no time format
+        str = BaseDestination().formatDate("--")
+        XCTAssertGreaterThanOrEqual(str, "--")
+        // HH:mm:ss
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        let dateStr = formatter.string(from: NSDate() as Date)
+        str = BaseDestination().formatDate(formatter.dateFormat)
+        XCTAssertEqual(str, dateStr)
+    }
+
+
+    ////////////////////////////////
+    // MARK: Filters
+    ////////////////////////////////
+
 
     func test_init_noMinLevelExplicitelySet_createsOneMatchingLevelFilter() {
         let destination = BaseDestination()

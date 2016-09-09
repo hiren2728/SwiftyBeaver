@@ -29,9 +29,7 @@ class FileDestinationTests: XCTestCase {
         // add file
         let file = FileDestination()
         file.logFileURL = URL(string: "file://" + path)!
-        file.detailOutput = false
-        file.dateFormat = ""
-        file.colored = false
+        file.format = "$L: $M"
         let _ = log.addDestination(file)
 
         log.verbose("first line to log")
@@ -75,9 +73,7 @@ class FileDestinationTests: XCTestCase {
         // add file
         let file = FileDestination()
         file.logFileURL = url
-        file.detailOutput = false
-        file.dateFormat = ""
-        file.colored = false
+        file.format = "$L: $M"
         let _ = log.addDestination(file)
 
         log.verbose("first line to log")

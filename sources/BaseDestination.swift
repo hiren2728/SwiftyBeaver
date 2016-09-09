@@ -40,14 +40,12 @@ struct MinLevelFilter {
 /// destination which all others inherit from. do not directly use
 open class BaseDestination: Hashable, Equatable {
 
-    /// if true additionally logs file, function & line
-    open var detailOutput = true
-    /// adds colored log levels where possible
-    open var colored = true
-    /// colors entire log
-    open var coloredLines = false
+    /// output format pattern, see documentation for syntax
+    open var format = "$Dyyyy-MM-dd HH:mm:ss.SSS$d $N.$F:$l $L: $M"
+
     /// runs in own serial background thread for better performance
     open var asynchronously = true
+
     /// do not log any message which has a lower level than this one
     open var minLevel = SwiftyBeaver.Level.Verbose {
         didSet {
@@ -55,10 +53,10 @@ open class BaseDestination: Hashable, Equatable {
             self.addFilter(filter: Filters.Level.atLeast(level: minLevel))
         }
     }
-    /// standard log format; set to "" to not log date at all
-    open var dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+
     /// set custom log level words for each level
     open var levelString = LevelString()
+
     /// set custom log level colors for each level
     open var levelColor = LevelColor()
 
@@ -71,20 +69,20 @@ open class BaseDestination: Hashable, Equatable {
     }
 
     // For a colored log level word in a logged line
-    // XCode RGB colors
+    // empty on default
     public struct LevelColor {
-        public var Verbose = "fg150,178,193;"     // silver
-        public var Debug = "fg32,155,124;"        // green
-        public var Info = "fg70,204,221;"         // blue
-        public var Warning = "fg253,202,78;"      // yellow
-        public var Error = "fg243,36,73;"         // red
+        public var Verbose = ""     // silver
+        public var Debug = ""       // green
+        public var Info = ""        // blue
+        public var Warning = ""     // yellow
+        public var Error = ""       // red
     }
+
+    var reset = ""
+    var escape = ""
 
     var filters = [FilterType]()
     let formatter = DateFormatter()
-
-    var reset = "\u{001b}[;"
-    var escape = "\u{001b}["
 
     // each destination class must have an own hashValue Int
     lazy public var hashValue: Int = self.defaultHashValue
@@ -101,150 +99,20 @@ open class BaseDestination: Hashable, Equatable {
         addFilter(filter: Filters.Level.atLeast(level: minLevel))
     }
 
-    /// Add a filter that determines whether or not a particular message will be logged to this destination
-    public func addFilter(filter: FilterType) {
-        // There can only be a maximum of one level filter in the filters collection.
-        // When one is set, remove any others if there are any and then add
-        let isNewLevelFilter = self.getFiltersTargeting(target: Filter.TargetType.LogLevel(minLevel),
-                                                        fromFilters: [filter]).count == 1
-        if isNewLevelFilter {
-            let levelFilters = self.getFiltersTargeting(target: Filter.TargetType.LogLevel(minLevel),
-                                                        fromFilters: self.filters)
-            levelFilters.forEach {
-                filter in
-                self.removeFilter(filter: filter)
-            }
-        }
-        filters.append(filter)
-    }
-
-    /// Remove a filter from the list of filters
-    public func removeFilter(filter: FilterType) {
-        let index = filters.index {
-            return ObjectIdentifier($0) == ObjectIdentifier(filter)
-        }
-
-        guard let filterIndex = index else {
-            return
-        }
-
-        filters.remove(at: filterIndex)
-    }
-
     /// send / store the formatted log message to the destination
     /// returns the formatted log message for processing by inheriting method
     /// and for unit tests (nil if error)
     open func send(_ level: SwiftyBeaver.Level, msg: String, thread: String,
         file: String, function: String, line: Int) -> String? {
-        var dateStr = ""
-        var str = ""
-        let levelStr = formattedLevel(level)
-        let formattedMsg = coloredMessage(msg, forLevel: level)
 
-        dateStr = formattedDate(dateFormat)
-        str = formattedMessage(dateStr, levelString: levelStr, msg: formattedMsg, thread: thread, file: file,
-            function: function, line: line, detailOutput: detailOutput)
-        return str
+        return formatMessage(format, level: level, msg: msg, thread: thread,
+                             file: file, function: function, line: line)
     }
 
-    /// returns a formatted date string
-    func formattedDate(_ dateFormat: String) -> String {
-        //formatter.timeZone = NSTimeZone(abbreviation: "UTC")
-        formatter.dateFormat = dateFormat
-        let dateStr = formatter.string(from: NSDate() as Date)
-        return dateStr
-    }
 
-    /// returns the log message entirely colored
-    func coloredMessage(_ msg: String, forLevel level: SwiftyBeaver.Level) -> String {
-        if !(colored && coloredLines) {
-            return msg
-        }
-
-        let color = colorForLevel(level: level)
-        let coloredMsg = escape + color + msg + reset
-        return coloredMsg
-    }
-
-    /// returns color string for level
-    func colorForLevel(level: SwiftyBeaver.Level) -> String {
-        var color = ""
-
-        switch level {
-        case SwiftyBeaver.Level.Debug:
-            color = levelColor.Debug
-
-        case SwiftyBeaver.Level.Info:
-            color = levelColor.Info
-
-        case SwiftyBeaver.Level.Warning:
-            color = levelColor.Warning
-
-        case SwiftyBeaver.Level.Error:
-            color = levelColor.Error
-
-        default:
-            color = levelColor.Verbose
-        }
-
-        return color
-    }
-
-    /// returns an optionally colored level noun (like INFO, etc.)
-    func formattedLevel(_ level: SwiftyBeaver.Level) -> String {
-        // optionally wrap the level string in color
-        let color = colorForLevel(level: level)
-        var levelStr = ""
-
-        switch level {
-        case SwiftyBeaver.Level.Debug:
-            levelStr = levelString.Debug
-
-        case SwiftyBeaver.Level.Info:
-            levelStr = levelString.Info
-
-        case SwiftyBeaver.Level.Warning:
-            levelStr = levelString.Warning
-
-        case SwiftyBeaver.Level.Error:
-            levelStr = levelString.Error
-
-        default:
-            // Verbose is default
-            levelStr = levelString.Verbose
-        }
-
-        if colored {
-            levelStr = escape + color + levelStr + reset
-        }
-        return levelStr
-    }
-
-    /// returns the formatted log message
-    func formattedMessage(_ dateString: String, levelString: String, msg: String,
-        thread: String, file: String, function: String, line: Int, detailOutput: Bool) -> String {
-        var str = ""
-        if dateString != "" {
-             str += "[\(dateString)] "
-        }
-        if detailOutput {
-            if thread != "main" && thread != "" {
-                str += "|\(thread)| "
-            }
-
-            // just use the file name of the path and remove suffix
-            //let file = path.components(separatedBy: "/").last!.components(".").first!
-            let pathComponents = file.components(separatedBy: "/")
-            if let lastComponent = pathComponents.last {
-                if let fileName = lastComponent.components(separatedBy: ".").first {
-                    str += "\(fileName).\(function):\(String(line)) \(levelString): \(msg)"
-                }
-            }
-        } else {
-            str += "\(levelString): \(msg)"
-        }
-        return str
-    }
+    ////////////////////////////////
+    // MARK: Format
+    ////////////////////////////////
 
     /// returns the log message based on the format pattern
     func formatMessage(_ format: String, level: SwiftyBeaver.Level, msg: String, thread: String,
@@ -278,9 +146,14 @@ open class BaseDestination: Hashable, Equatable {
                     text += String(line) + remainingPhrase
                 case "D":
                     // start of datetime format
-                    text += formattedDate(remainingPhrase)
+                    text += formatDate(remainingPhrase)
                 case "d":
                     text += remainingPhrase
+                case "C":
+                    // color code ("" on default)
+                    text += escape + colorForLevel(level) + remainingPhrase
+                case "c":
+                    text += reset + remainingPhrase
                 default:
                     text += phrase
                 }
@@ -314,6 +187,29 @@ open class BaseDestination: Hashable, Equatable {
         return str
     }
 
+    /// returns color string for level
+    func colorForLevel(_ level: SwiftyBeaver.Level) -> String {
+        var color = ""
+
+        switch level {
+        case SwiftyBeaver.Level.Debug:
+            color = levelColor.Debug
+
+        case SwiftyBeaver.Level.Info:
+            color = levelColor.Info
+
+        case SwiftyBeaver.Level.Warning:
+            color = levelColor.Warning
+
+        case SwiftyBeaver.Level.Error:
+            color = levelColor.Error
+
+        default:
+            color = levelColor.Verbose
+        }
+        return color
+    }
+
     /// returns the filename of a path
     func fileNameOfFile(_ file: String) -> String {
         let fileParts = file.components(separatedBy: "/")
@@ -323,7 +219,7 @@ open class BaseDestination: Hashable, Equatable {
         return ""
     }
 
-    /// returns the filename without suffix of a path
+    /// returns the filename without suffix (= file ending) of a path
     func fileNameWithoutSuffix(_ file: String) -> String {
         let fileName = fileNameOfFile(file)
 
@@ -334,6 +230,49 @@ open class BaseDestination: Hashable, Equatable {
             }
         }
         return ""
+    }
+
+    /// returns a formatted date string
+    func formatDate(_ dateFormat: String) -> String {
+        //formatter.timeZone = NSTimeZone(abbreviation: "UTC")
+        formatter.dateFormat = dateFormat
+        let dateStr = formatter.string(from: NSDate() as Date)
+        return dateStr
+    }
+
+
+    ////////////////////////////////
+    // MARK: Filters
+    ////////////////////////////////
+
+    /// Add a filter that determines whether or not a particular message will be logged to this destination
+    public func addFilter(filter: FilterType) {
+        // There can only be a maximum of one level filter in the filters collection.
+        // When one is set, remove any others if there are any and then add
+        let isNewLevelFilter = self.getFiltersTargeting(target: Filter.TargetType.LogLevel(minLevel),
+                                                        fromFilters: [filter]).count == 1
+        if isNewLevelFilter {
+            let levelFilters = self.getFiltersTargeting(target: Filter.TargetType.LogLevel(minLevel),
+                                                        fromFilters: self.filters)
+            levelFilters.forEach {
+                filter in
+                self.removeFilter(filter: filter)
+            }
+        }
+        filters.append(filter)
+    }
+
+    /// Remove a filter from the list of filters
+    public func removeFilter(filter: FilterType) {
+        let index = filters.index {
+            return ObjectIdentifier($0) == ObjectIdentifier(filter)
+        }
+
+        guard let filterIndex = index else {
+            return
+        }
+
+        filters.remove(at: filterIndex)
     }
 
     /// Answer whether the destination has any message filters
