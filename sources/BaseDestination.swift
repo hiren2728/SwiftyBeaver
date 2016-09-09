@@ -30,12 +30,6 @@ let OS = "Android"
 let OS = "Unknown"
 #endif
 
-@available(*, deprecated:0.5.5)
-struct MinLevelFilter {
-    var minLevel = SwiftyBeaver.Level.Verbose
-    var path = ""
-    var function = ""
-}
 
 /// destination which all others inherit from. do not directly use
 open class BaseDestination: Hashable, Equatable {
@@ -132,6 +126,11 @@ open class BaseDestination: Hashable, Equatable {
                     text += levelWord(level) + remainingPhrase
                 case "M":
                     text += msg + remainingPhrase
+                case "m":
+                    // json-encoded message
+                    let dict = ["message": msg]
+                    let jsonString = jsonStringFromDict(dict)
+                    text += jsonStringValue(jsonString, key: "message") + remainingPhrase
                 case "T":
                     text += thread + remainingPhrase
                 case "N":
@@ -240,6 +239,37 @@ open class BaseDestination: Hashable, Equatable {
         return dateStr
     }
 
+    /// returns the json-encoded string value
+    /// after it was encoded by jsonStringFromDict
+    func jsonStringValue(_ jsonString: String?, key: String) -> String {
+        guard let str = jsonString else {
+            return ""
+        }
+
+        // remove the leading {"key":" from the json string and the final }
+        let offset = key.characters.count + 5
+        let endIndex = str.index(str.startIndex,
+                                 offsetBy: str.characters.count - 2)
+        let range = str.index(str.startIndex, offsetBy: offset)..<endIndex
+        return str[range]
+    }
+
+    /// turns dict into JSON-encoded string
+    func jsonStringFromDict(_ dict: [String: Any]) -> String? {
+        var jsonString: String?
+
+        // try to create JSON string
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: dict, options: [])
+            if let str = NSString(data: jsonData,
+                                  encoding: String.Encoding.utf8.rawValue) as? String {
+                jsonString = str
+            }
+        } catch let error as NSError {
+            print("SwiftyBeaver could not create JSON from dict. \(error)")
+        }
+        return jsonString
+    }
 
     ////////////////////////////////
     // MARK: Filters
